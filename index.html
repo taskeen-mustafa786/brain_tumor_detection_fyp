@@ -1412,6 +1412,25 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Diagnosis History Section -->
+                <div class="card" style="margin-top: 2rem;">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-history"></i>
+                            Your Diagnosis History
+                        </h3>
+                        <button class="btn btn-secondary" onclick="loadDiagnosisHistory()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="diagnosisHistory">
+                        <p style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                            <i class="fas fa-inbox"></i><br>
+                            No diagnosis records yet. Upload your first scan to get started.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <!-- Predict Page -->
@@ -2074,6 +2093,94 @@
                 document.getElementById('detectionRate').textContent = '87%';
                 document.getElementById('avgConfidence').textContent = '89%';
             }
+        }
+
+        // Load diagnosis history
+        async function loadDiagnosisHistory() {
+            try {
+                if (!currentUser || !currentUser.patient_id) {
+                    console.log('No patient ID available');
+                    return;
+                }
+
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${window.API_BASE_URL}/patients/${currentUser.patient_id}/predictions`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const predictions = await response.json();
+                    displayDiagnosisHistory(predictions);
+                } else {
+                    console.error('Failed to load predictions');
+                }
+            } catch (error) {
+                console.error('Error loading diagnosis history:', error);
+            }
+        }
+
+        function displayDiagnosisHistory(predictions) {
+            const diagnosisContainer = document.getElementById('diagnosisHistory');
+
+            if (!predictions || predictions.length === 0) {
+                diagnosisContainer.innerHTML = `
+                    <p style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                        <i class="fas fa-inbox"></i><br>
+                        No diagnosis records yet. Upload your first scan to get started.
+                    </p>
+                `;
+                return;
+            }
+
+            // Sort predictions by timestamp (newest first)
+            const sorted = predictions.sort((a, b) => {
+                const dateA = new Date(a.timestamp || 0);
+                const dateB = new Date(b.timestamp || 0);
+                return dateB - dateA;
+            });
+
+            const html = `
+                <div class="patient-list">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Result</th>
+                                <th>Tumor Type</th>
+                                <th>Confidence</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sorted.map((pred, idx) => `
+                                <tr>
+                                    <td>${new Date(pred.timestamp).toLocaleDateString()}</td>
+                                    <td>
+                                        <span style="color: ${pred.tumor_detected ? 'var(--error-color)' : 'var(--success-color)'};">
+                                            ${pred.tumor_detected ? '🔴 Tumor Detected' : '✅ No Tumor'}
+                                        </span>
+                                    </td>
+                                    <td>${pred.tumor_type || 'N/A'}</td>
+                                    <td>${(pred.confidence || 0).toFixed(1)}%</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.9rem;" onclick="viewDiagnosisDetails(${idx})">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            diagnosisContainer.innerHTML = html;
+        }
+
+        function viewDiagnosisDetails(index) {
+            showMessage('Diagnosis details feature coming soon!', 'info');
         }
 
         // File upload
