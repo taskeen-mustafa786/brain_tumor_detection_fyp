@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroLink AI</title>
+
+<link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #71b7e6, #9b59b6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    width: 380px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+}
+
+.input-field {
+    display: flex;
+    align-items: center;
+    margin: 12px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 5px;
+}
+
+.input-field i {
+    margin: 0 8px;
+    color: #007bff;
+}
+
+.input-field input {
+    border: none;
+    outline: none;
+    width: 100%;
+    padding: 8px;
+}
+
+button {
+    width: 48%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 6px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+.hidden {
+    display: none;
+}
+
+#preview img {
+    width: 100%;
+    margin-top: 10px;
+    border-radius: 10px;
+}
+
+#result {
+    font-weight: bold;
+    color: #e74c3c;
+    text-align: center;
+    margin-top: 15px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- LOGIN CARD -->
+<div id="authCard" class="card">
+    <h2>Sign Up / Login</h2>
+
+    <div class="input-field">
+        <i class="fa fa-envelope"></i>
+        <input type="email" id="email" placeholder="Email">
+    </div>
+
+    <div class="input-field">
+        <i class="fa fa-lock"></i>
+        <input type="password" id="password" placeholder="Password">
+    </div>
+
+    <div style="display:flex; justify-content:space-between;">
+        <button id="signup">Sign Up</button>
+        <button id="login">Login</button>
+    </div>
+</div>
+
+<!-- UPLOAD CARD -->
+<div id="uploadCard" class="card hidden">
+    <h2>Upload MRI Image</h2>
+
+    <input type="file" id="fileInput">
+    <div id="preview">No image selected</div>
+
+    <button id="analyze" disabled>Analyze</button>
+    <button id="logout">Logout</button>
+
+    <p id="result"></p>
+</div>
+
+</div>
+
+<script>
+// ELEMENTS
+const authCard = document.getElementById("authCard");
+const uploadCard = document.getElementById("uploadCard");
+
+const signupBtn = document.getElementById("signup");
+const loginBtn = document.getElementById("login");
+const logoutBtn = document.getElementById("logout");
+
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+
+const fileInput = document.getElementById("fileInput");
+const preview = document.getElementById("preview");
+const analyzeBtn = document.getElementById("analyze");
+const result = document.getElementById("result");
+
+// SIMULATED USER DATABASE
+let users = {};
+
+// FUNCTION → SHOW UPLOAD PAGE
+function goToUpload() {
+    authCard.classList.add("hidden");
+    uploadCard.classList.remove("hidden");
+}
+
+// SIGN UP
+signupBtn.onclick = () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    if (!email || !password) return alert("Enter email & password");
+
+    if (users[email]) return alert("User already exists!");
+    users[email] = password;
+    alert("Signup Success ✅");
+    goToUpload();
+};
+
+// LOGIN
+loginBtn.onclick = () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    if (!email || !password) return alert("Enter email & password");
+
+    if (!users[email]) return alert("User does not exist!");
+    if (users[email] !== password) return alert("Incorrect password!");
+
+    alert("Login Success ✅");
+    goToUpload();
+};
+
+// LOGOUT
+logoutBtn.onclick = () => {
+    uploadCard.classList.add("hidden");
+    authCard.classList.remove("hidden");
+    emailInput.value = "";
+    passwordInput.value = "";
+    fileInput.value = "";
+    preview.innerHTML = "No image selected";
+    analyzeBtn.disabled = true;
+    result.innerHTML = "";
+};
+
+// IMAGE PREVIEW
+fileInput.onchange = () => {
+    const file = fileInput.files[0];
+    if (file) {
+        preview.innerHTML = `<img src="${URL.createObjectURL(file)}">`;
+        analyzeBtn.disabled = false;
+    } else {
+        preview.innerHTML = "No image selected";
+        analyzeBtn.disabled = true;
+    }
+};
+
+// ANALYZE BUTTON
+analyzeBtn.onclick = () => {
+    result.innerHTML = "Analyzing...";
+    setTimeout(() => {
+        result.innerHTML = "Tumor Detected (Confidence: 92%)";
+    }, 2000);
+};
+</script>
+
+</body>
+</html>
