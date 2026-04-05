@@ -214,6 +214,24 @@ async def get_config():
         }
     }
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint with service status"""
+    return {
+        "status": "healthy",
+        "services": {
+            "firebase_configured": bool(FIREBASE_PUBLIC_CONFIG.get("apiKey")),
+            "firestore_connected": firestore_db is not None and not firestore_db.demo_mode if firestore_db else False,
+            "firestore_demo_mode": firestore_db.demo_mode if firestore_db else True,
+            "model_loaded": model != "DEMO_MODEL",
+            "jwt_secret_configured": JWT_SECRET != "your_jwt_secret_here"
+        },
+        "environment": {
+            "app_env": os.getenv("APP_ENV", "development"),
+            "debug": os.getenv("DEBUG", "false").lower() == "true"
+        }
+    }
+
 @app.post("/auth/register")
 async def register(user: UserRegister):
     """Register a new user"""
