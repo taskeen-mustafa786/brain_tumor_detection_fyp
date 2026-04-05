@@ -1,8 +1,8 @@
 [theme]
 primaryColor = "#2E86AB"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-textColor = "#262730"
+backgroundColor = "#1a1a1a"
+secondaryBackgroundColor = "#2d2d2d"
+textColor = "#ffffff"
 font = "sans serif"
 
 [client]
@@ -15,4 +15,12 @@ level = "info"
 [server]
 port = 8501
 headless = true
-runOnSave = true
+runOnSave = false
+maxUploadSize = 50  # MB - limit for MRI scans
+maxMessageSize = 100  # MB
+enableCORS = false
+enableXsrfProtection = true
+
+[global]
+developmentMode = false
+dataFrameSerialization = "legacy"
