@@ -15,8 +15,20 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // API Configuration
-        window.API_BASE_URL = 'http://localhost:8001';
+        // API Configuration - Auto-detect backend port
+        // Supports: localhost:3000 (development), localhost:8001 (alt), or production URL
+        window.API_BASE_URL = (() => {
+            const host = window.location.hostname;
+            const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+            
+            if (isLocalhost) {
+                // Try common development ports
+                return 'http://localhost:3000';
+            }
+            
+            // Production: use current host
+            return `${window.location.protocol}//${host}:${window.location.port || window.location.protocol === 'https:' ? 443 : 80}`;
+        })();
         
         window.firebaseApp = null;
         window.firebaseConfig = null;
