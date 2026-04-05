@@ -1,0 +1,26 @@
+{
+  "name": "brain_tumor_detection_fyp",
+  "version": "1.0.0",
+  "description": "> A comprehensive web-based application for automated brain tumor detection using state-of-the-art AI/ML technologies with cloud integration and HIPAA-compliant patient management.",
+  "main": "index.js",
+  "scripts": {
+    "predeploy": "echo 'Building for production...'",
+    "deploy": "gh-pages -d .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taskeen-mustafa786/brain_tumor_detection_fyp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/taskeen-mustafa786/brain_tumor_detection_fyp/issues"
+  },
+  "homepage": "https://taskeen-mustafa786.github.io/brain_tumor_detection_fyp",
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
+}
