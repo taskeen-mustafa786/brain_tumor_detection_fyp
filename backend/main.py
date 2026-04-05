@@ -234,13 +234,15 @@ async def health_check():
 
 @app.post("/auth/register")
 async def register(user: UserRegister):
-    """Register a new user"""
+    """Register a new user with email verification"""
     if not firestore_db:
         # Demo mode
         return {
             "message": "User registered successfully (demo mode)",
             "email": user.email,
-            "name": user.name
+            "name": user.name,
+            "email_verification_required": True,
+            "verification_note": "Check your email for verification link"
         }
 
     try:
@@ -255,14 +257,21 @@ async def register(user: UserRegister):
             "name": user.name,
             "role": "patient",  # Default role
             "created_at": datetime.utcnow().isoformat(),
-            "patient_id": f"P{hash(user.email) % 10000:04d}"
+            "patient_id": f"P{hash(user.email) % 10000:04d}",
+            "email_verified": False,
+            "verification_sent_at": datetime.utcnow().isoformat()
         }
 
         success = firestore_db.create_user(user_data)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to create user")
 
-        return {"message": "User registered successfully", "user": user_data}
+        return {
+            "message": "User registered successfully",
+            "user": user_data,
+            "email_verification_required": True,
+            "verification_note": "A verification email has been sent. Please check your email and verify your account before logging in."
+        }
 
     except HTTPException:
         raise
