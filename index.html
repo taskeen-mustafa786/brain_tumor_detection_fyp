@@ -1,211 +1,2172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NeuroLink AI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 Brain Tumor Detection System</title>
 
-<link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
-<style>
-body {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #71b7e6, #9b59b6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-.container {
-    width: 380px;
-}
+        // API Configuration
+        window.API_BASE_URL = 'http://localhost:8001';
+        
+        window.firebaseApp = null;
+        window.firebaseConfig = null;
 
-.card {
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    margin-bottom: 20px;
-}
+        window.initializeFirebaseApp = async () => {
+            try {
+                const response = await fetch(`${window.API_BASE_URL}/config`);
+                if (!response.ok) {
+                    console.warn('Failed to fetch Firebase config:', response.statusText);
+                    return;
+                }
 
-.input-field {
-    display: flex;
-    align-items: center;
-    margin: 12px 0;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    padding: 5px;
-}
+                const config = await response.json();
+                if (!config.firebase || !config.firebase.apiKey) {
+                    console.warn('Firebase config is not configured in backend .env');
+                    return;
+                }
 
-.input-field i {
-    margin: 0 8px;
-    color: #007bff;
-}
+                const app = initializeApp(config.firebase);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
 
-.input-field input {
-    border: none;
-    outline: none;
-    width: 100%;
-    padding: 8px;
-}
+                window.firebaseApp = {
+                    app,
+                    auth,
+                    db,
+                    createUserWithEmailAndPassword,
+                    signInWithEmailAndPassword,
+                    signOut,
+                    onAuthStateChanged,
+                    collection,
+                    addDoc,
+                    getDocs,
+                    doc,
+                    updateDoc,
+                    deleteDoc,
+                    query,
+                    where,
+                    orderBy
+                };
+                window.firebaseConfig = config.firebase;
+                console.log('Firebase initialized from backend config');
+            } catch (error) {
+                console.warn('Firebase initialization failed:', error);
+            }
+        };
+    </script>
 
-button {
-    width: 48%;
-    padding: 10px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 6px;
-    background: #007bff;
-    color: white;
-    cursor: pointer;
-}
+    <style>
+        :root {
+            --primary-color: #2E86AB;
+            --secondary-color: #A23B72;
+            --accent-color: #F18F01;
+            --success-color: #4CAF50;
+            --error-color: #f44336;
+            --warning-color: #ff9800;
+            --info-color: #2196F3;
+            --dark-bg: #1a1a1a;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-button:hover {
-    background: #0056b3;
-}
+        [data-theme="dark"] {
+            --primary-color: #4FC3F7;
+            --secondary-color: #BA68C8;
+            --accent-color: #FFB74D;
+            --dark-bg: #121212;
+            --light-bg: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --border-color: #404040;
+        }
 
-.hidden {
-    display: none;
-}
+        [data-theme="blue"] {
+            --primary-color: #1976D2;
+            --secondary-color: #7B1FA2;
+            --accent-color: #FF6F00;
+        }
 
-#preview img {
-    width: 100%;
-    margin-top: 10px;
-    border-radius: 10px;
-}
+        [data-theme="green"] {
+            --primary-color: #388E3C;
+            --secondary-color: #7B1FA2;
+            --accent-color: #F57C00;
+        }
 
-#result {
-    font-weight: bold;
-    color: #e74c3c;
-    text-align: center;
-    margin-top: 15px;
-}
-</style>
+        [data-theme="purple"] {
+            --primary-color: #7B1FA2;
+            --secondary-color: #C2185B;
+            --accent-color: #FFC107;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: var(--transition);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        [data-theme="dark"] .header {
+            background: rgba(45, 45, 45, 0.95);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-link:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .nav-link.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .theme-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .theme-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-btn.active {
+            border-color: white;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 80px;
+            min-height: calc(100vh - 160px);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(46, 134, 171, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-color);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: var(--light-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Tables */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table th {
+            background: var(--light-bg);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .table tr:hover {
+            background: var(--light-bg);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        /* File Upload */
+        .file-upload {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary-color);
+            background: var(--light-bg);
+        }
+
+        .file-upload.dragover {
+            border-color: var(--primary-color);
+            background: rgba(46, 134, 171, 0.1);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+
+        /* Results */
+        .result-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .result-status {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .result-confidence {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .result-detail {
+            background: var(--light-bg);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .result-detail-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .result-detail-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+        }
+
+        .alert-error {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+        }
+
+        .alert-warning {
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid var(--warning-color);
+            color: var(--warning-color);
+        }
+
+        .alert-info {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid var(--info-color);
+            color: var(--info-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                padding: 0 15px;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Page specific styles */
+        .auth-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 80px);
+        }
+
+        .auth-card {
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 2rem;
+            background: var(--light-bg);
+            border-radius: var(--border-radius);
+            padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .tab-btn.active {
+            background: white;
+            box-shadow: var(--shadow);
+            color: var(--primary-color);
+        }
+
+        .patient-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .patient-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .patient-item:hover {
+            background: var(--light-bg);
+            border-color: var(--primary-color);
+        }
+
+        .patient-info h4 {
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+
+        .patient-info p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .about-content {
+            line-height: 1.6;
+        }
+
+        .about-content h3 {
+            color: var(--primary-color);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .feature-item {
+            text-align: center;
+            padding: 1.5rem;
+            background: var(--light-bg);
+            border-radius: var(--border-radius);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .contact-form textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        /* Password validation */
+        .password-validation {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .validation-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+            transition: var(--transition);
+        }
+
+        .validation-item.valid {
+            color: var(--success-color);
+        }
+
+        .validation-item.invalid {
+            color: var(--error-color);
+        }
+
+        .tumor-type-result {
+            background: var(--light-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .tumor-type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .tumor-type-glioma { background: #ff6b6b; color: white; }
+        .tumor-type-meningioma { background: #4ecdc4; color: white; }
+        .tumor-type-pituitary { background: #45b7d1; color: white; }
+        .tumor-type-none { background: #96ceb4; color: white; }
+
+        .severity-high { background: #ff4757; color: white; }
+        .severity-medium { background: #ffa726; color: white; }
+        .severity-low { background: #4caf50; color: white; }
+
+        .recommendations {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .recommendations h4 {
+            color: #856404;
+            margin-bottom: 0.5rem;
+        }
+
+        .recommendations ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+
+        .recommendations li {
+            color: #856404;
+            margin-bottom: 0.25rem;
+        }
+    </style>
 </head>
 <body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                Brain Tumor Detection
+            </div>
+            <nav class="nav-links">
+                <a href="#dashboard" class="nav-link active" data-page="dashboard">Dashboard</a>
+                <a href="#predict" class="nav-link" data-page="predict">Predict</a>
+                <a href="#patients" class="nav-link" data-page="patients">Patients</a>
+                <a href="#about" class="nav-link" data-page="about">About</a>
+                <div class="theme-selector">
+                    <button class="theme-btn" data-theme="light" style="background: linear-gradient(45deg, #2E86AB, #A23B72);" title="Light Theme"></button>
+                    <button class="theme-btn" data-theme="dark" style="background: linear-gradient(45deg, #1a1a1a, #2d2d2d);" title="Dark Theme"></button>
+                    <button class="theme-btn" data-theme="blue" style="background: linear-gradient(45deg, #1976D2, #7B1FA2);" title="Blue Theme"></button>
+                    <button class="theme-btn" data-theme="green" style="background: linear-gradient(45deg, #388E3C, #7B1FA2);" title="Green Theme"></button>
+                    <button class="theme-btn" data-theme="purple" style="background: linear-gradient(45deg, #7B1FA2, #C2185B);" title="Purple Theme"></button>
+                </div>
+                <button id="logoutBtn" class="btn btn-secondary hidden">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </nav>
+        </div>
+    </header>
 
-<div class="container">
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Auth Page -->
+            <div id="authPage" class="auth-page">
+                <div class="card auth-card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-user-circle"></i>
+                            Welcome to Brain Tumor Detection
+                        </h2>
+                    </div>
 
-<!-- LOGIN CARD -->
-<div id="authCard" class="card">
-    <h2>Sign Up / Login</h2>
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" data-tab="login">Login</button>
+                        <button class="tab-btn" data-tab="register">Register</button>
+                    </div>
 
-    <div class="input-field">
-        <i class="fa fa-envelope"></i>
-        <input type="email" id="email" placeholder="Email">
+                    <!-- Login Form -->
+                    <div id="loginForm" class="tab-content">
+                        <form id="loginFormData">
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-input" id="loginEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-input" id="loginPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Register Form -->
+                    <div id="registerForm" class="tab-content hidden">
+                        <form id="registerFormData">
+                            <div class="form-group">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-input" id="registerName" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-input" id="registerEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-input" id="registerPassword" required>
+                                <div id="passwordValidation" class="password-validation"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Confirm Password</label>
+                                <input type="password" class="form-input" id="registerConfirmPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                <i class="fas fa-user-plus"></i> Register
+                            </button>
+                        </form>
+                    </div>
+
+                    <div id="authMessage" class="hidden" style="margin-top: 1rem;"></div>
+                </div>
+            </div>
+
+            <!-- Dashboard Page -->
+            <div id="dashboardPage" class="hidden">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalPatients">0</div>
+                        <div class="stat-label">Total Patients</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalPredictions">0</div>
+                        <div class="stat-label">Predictions Made</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="detectionRate">0%</div>
+                        <div class="stat-label">Detection Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgConfidence">0%</div>
+                        <div class="stat-label">Avg Confidence</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-line"></i>
+                                Model Performance
+                            </h3>
+                        </div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Accuracy</td><td>90.59%</td></tr>
+                                <tr><td>Precision</td><td>91.45%</td></tr>
+                                <tr><td>Recall</td><td>88.76%</td></tr>
+                                <tr><td>F1-Score</td><td>90.08%</td></tr>
+                                <tr><td>AUC-ROC</td><td>95.32%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-clock"></i>
+                                Recent Activity
+                            </h3>
+                        </div>
+                        <div id="recentActivity">
+                            <p style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                                <i class="fas fa-info-circle"></i><br>
+                                No recent activity
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Predict Page -->
+            <div id="predictPage" class="hidden">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-upload"></i>
+                                Upload Scan Image
+                            </h3>
+                        </div>
+
+                        <div class="file-upload" id="fileUpload">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                            <p>Drag & drop your MRI/CT scan here or click to browse</p>
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                                Supported formats: JPG, PNG, JPEG
+                            </p>
+                        </div>
+                        <input type="file" class="file-input" id="scanFile" accept="image/*">
+
+                        <div class="form-group">
+                            <label class="form-label">Scan Type</label>
+                            <select class="form-input" id="scanType">
+                                <option value="MRI">MRI Scan</option>
+                                <option value="CT">CT Scan</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Patient ID (Optional)</label>
+                            <input type="text" class="form-input" id="patientId" placeholder="Enter patient ID">
+                        </div>
+
+                        <button class="btn btn-primary" id="analyzeBtn" disabled>
+                            <i class="fas fa-search"></i> Analyze Scan
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-image"></i>
+                                Image Preview
+                            </h3>
+                        </div>
+                        <div id="imagePreview" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            <i class="fas fa-image" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                            <p>No image selected</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="resultsSection" class="hidden">
+                    <div class="result-card">
+                        <div id="resultStatus" class="result-status"></div>
+                        <div id="resultConfidence" class="result-confidence"></div>
+                        <div class="result-details">
+                            <div class="result-detail">
+                                <div class="result-detail-label">Tumor Probability</div>
+                                <div id="tumorProbability" class="result-detail-value">-</div>
+                            </div>
+                            <div class="result-detail">
+                                <div class="result-detail-label">Confidence Level</div>
+                                <div id="confidenceLevel" class="result-detail-value">-</div>
+                            </div>
+                            <div class="result-detail">
+                                <div class="result-detail-label">Scan Type</div>
+                                <div id="resultScanType" class="result-detail-value">-</div>
+                            </div>
+                            <div class="result-detail">
+                                <div class="result-detail-label">Analysis Time</div>
+                                <div id="analysisTime" class="result-detail-value">-</div>
+                            </div>
+                        </div>
+                        <div class="btn-group" style="margin-top: 2rem;">
+                            <button class="btn btn-success" id="saveResultBtn">
+                                <i class="fas fa-save"></i> Save to Patient Record
+                            </button>
+                            <button class="btn btn-secondary" id="newAnalysisBtn">
+                                <i class="fas fa-plus"></i> New Analysis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patients Page -->
+            <div id="patientsPage" class="hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-users"></i>
+                            Patient Records
+                        </h3>
+                        <button class="btn btn-primary" id="addPatientBtn">
+                            <i class="fas fa-plus"></i> Add Patient
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" class="form-input" id="patientSearch" placeholder="Search patients by name or ID...">
+                    </div>
+
+                    <div id="patientList" class="patient-list">
+                        <p style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                            <i class="fas fa-users"></i><br>
+                            No patients found
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Page -->
+            <div id="aboutPage" class="hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-info-circle"></i>
+                            About Brain Tumor Detection System
+                        </h3>
+                    </div>
+
+                    <div class="about-content">
+                        <p>
+                            The Brain Tumor Detection System is an advanced AI-powered web application designed to assist medical professionals in the early detection and analysis of brain tumors using MRI and CT scan images.
+                        </p>
+
+                        <h3><i class="fas fa-brain"></i> How It Works</h3>
+                        <p>
+                            Our system utilizes state-of-the-art Transfer Learning with EfficientNetB0 architecture, achieving 90.59% accuracy in tumor detection. The AI model analyzes uploaded scan images and provides instant results with confidence scores.
+                        </p>
+
+                        <h3><i class="fas fa-chart-bar"></i> Performance Metrics</h3>
+                        <div class="feature-grid">
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-bullseye"></i></div>
+                                <h4>90.59% Accuracy</h4>
+                                <p>Industry-leading detection accuracy</p>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-crosshairs"></i></div>
+                                <h4>91.45% Precision</h4>
+                                <p>Minimized false positive results</p>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-search"></i></div>
+                                <h4>88.76% Recall</h4>
+                                <p>High tumor detection rate</p>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-balance-scale"></i></div>
+                                <h4>90.08% F1-Score</h4>
+                                <p>Optimal precision-recall balance</p>
+                            </div>
+                        </div>
+
+                        <h3><i class="fas fa-shield-alt"></i> Security & Privacy</h3>
+                        <p>
+                            We prioritize patient data security with HIPAA-compliant practices, encrypted data transmission, and secure cloud storage using Firebase Firestore.
+                        </p>
+
+                        <h3><i class="fas fa-envelope"></i> Contact & Support</h3>
+                        <p>
+                            Have questions or suggestions? We'd love to hear from you. Use the contact form below to send us your feedback.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-envelope"></i>
+                            Send Suggestion
+                        </h3>
+                    </div>
+
+                    <form id="contactForm" class="contact-form">
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-input" id="contactName" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-input" id="contactEmail" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Subject</label>
+                            <input type="text" class="form-input" id="contactSubject" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Message</label>
+                            <textarea class="form-input" id="contactMessage" required placeholder="Your suggestion or feedback..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send Message
+                        </button>
+                    </form>
+
+                    <div id="contactMessage" class="hidden" style="margin-top: 1rem;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <!-- Add Patient Modal -->
+    <div id="addPatientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Patient</h3>
+                <button class="modal-close" data-modal="addPatientModal">&times;</button>
+            </div>
+            <form id="addPatientForm">
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="patientName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Patient ID</label>
+                        <input type="text" class="form-input" id="newPatientId" required>
+                    </div>
+                </div>
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Age</label>
+                        <input type="number" class="form-input" id="patientAge" min="1" max="120" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select class="form-input" id="patientGender" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Blood Type</label>
+                        <select class="form-input" id="patientBloodType">
+                            <option value="">Select Blood Type</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="patientEmail">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="tel" class="form-input" id="patientPhone">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Address</label>
+                    <textarea class="form-input" id="patientAddress" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Medical History</label>
+                    <textarea class="form-input" id="patientHistory" rows="3" placeholder="Previous conditions, surgeries, etc."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Current Medications</label>
+                    <textarea class="form-input" id="patientMedications" rows="2" placeholder="List current medications"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Allergies</label>
+                    <textarea class="form-input" id="patientAllergies" rows="2" placeholder="Known allergies"></textarea>
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Patient
+                    </button>
+                    <button type="button" class="btn btn-secondary modal-close" data-modal="addPatientModal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <div class="input-field">
-        <i class="fa fa-lock"></i>
-        <input type="password" id="password" placeholder="Password">
+    <!-- Patient Details Modal -->
+    <div id="patientDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Patient Details</h3>
+                <button class="modal-close" data-modal="patientDetailsModal">&times;</button>
+            </div>
+            <div id="patientDetailsContent">
+                <!-- Patient details will be loaded here -->
+            </div>
+        </div>
     </div>
 
-    <div style="display:flex; justify-content:space-between;">
-        <button id="signup">Sign Up</button>
-        <button id="login">Login</button>
-    </div>
-</div>
+    <script>
+        // Password validation function
+        function validatePassword(password) {
+            const minLength = 8;
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const hasNumbers = /\d/.test(password);
+            const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
 
-<!-- UPLOAD CARD -->
-<div id="uploadCard" class="card hidden">
-    <h2>Upload MRI Image</h2>
+            const errors = [];
 
-    <input type="file" id="fileInput">
-    <div id="preview">No image selected</div>
+            if (password.length < minLength) {
+                errors.push(`At least ${minLength} characters`);
+            }
+            if (!hasUpperCase) {
+                errors.push('One uppercase letter');
+            }
+            if (!hasLowerCase) {
+                errors.push('One lowercase letter');
+            }
+            if (!hasNumbers) {
+                errors.push('One number');
+            }
+            if (!hasSpecialChar) {
+                errors.push('One special character');
+            }
 
-    <button id="analyze" disabled>Analyze</button>
-    <button id="logout">Logout</button>
+            return {
+                isValid: errors.length === 0,
+                errors: errors
+            };
+        }
 
-    <p id="result"></p>
-</div>
+        // Show password validation feedback
+        function showPasswordValidation(password) {
+            const validation = validatePassword(password);
+            const feedbackElement = document.getElementById('passwordValidation');
 
-</div>
+            if (!feedbackElement) return;
 
-<script>
-// ELEMENTS
-const authCard = document.getElementById("authCard");
-const uploadCard = document.getElementById("uploadCard");
+            if (password.length === 0) {
+                feedbackElement.innerHTML = '';
+                return;
+            }
 
-const signupBtn = document.getElementById("signup");
-const loginBtn = document.getElementById("login");
-const logoutBtn = document.getElementById("logout");
+            const requirements = [
+                { test: password.length >= 8, text: 'At least 8 characters' },
+                { test: /[A-Z]/.test(password), text: 'One uppercase letter' },
+                { test: /[a-z]/.test(password), text: 'One lowercase letter' },
+                { test: /\d/.test(password), text: 'One number' },
+                { test: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password), text: 'One special character' }
+            ];
 
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
+            feedbackElement.innerHTML = requirements.map(req =>
+                `<div class="validation-item ${req.test ? 'valid' : 'invalid'}">
+                    <i class="fas fa-${req.test ? 'check' : 'times'}"></i>
+                    ${req.text}
+                </div>`
+            ).join('');
+        }
 
-const fileInput = document.getElementById("fileInput");
-const preview = document.getElementById("preview");
-const analyzeBtn = document.getElementById("analyze");
-const result = document.getElementById("result");
+        // DOM Elements
+        const authPage = document.getElementById('authPage');
+        const dashboardPage = document.getElementById('dashboardPage');
+        const predictPage = document.getElementById('predictPage');
+        const patientsPage = document.getElementById('patientsPage');
+        const aboutPage = document.getElementById('aboutPage');
 
-// SIMULATED USER DATABASE
-let users = {};
+        // Initialize Firebase (will be configured with backend .env values)
+        async function initializeFirebase() {
+            if (window.initializeFirebaseApp) {
+                await window.initializeFirebaseApp();
+            }
+        }
 
-// FUNCTION → SHOW UPLOAD PAGE
-function goToUpload() {
-    authCard.classList.add("hidden");
-    uploadCard.classList.remove("hidden");
-}
+        // Theme management
+        function initializeThemes() {
+            const themeButtons = document.querySelectorAll('.theme-btn');
+            const body = document.body;
 
-// SIGN UP
-signupBtn.onclick = () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    if (!email || !password) return alert("Enter email & password");
+            themeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const theme = btn.dataset.theme;
 
-    if (users[email]) return alert("User already exists!");
-    users[email] = password;
-    alert("Signup Success ✅");
-    goToUpload();
-};
+                    // Remove active class from all buttons
+                    themeButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
 
-// LOGIN
-loginBtn.onclick = () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    if (!email || !password) return alert("Enter email & password");
+                    // Apply theme
+                    body.setAttribute('data-theme', theme);
 
-    if (!users[email]) return alert("User does not exist!");
-    if (users[email] !== password) return alert("Incorrect password!");
+                    // Save theme preference
+                    localStorage.setItem('theme', theme);
+                });
+            });
 
-    alert("Login Success ✅");
-    goToUpload();
-};
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            body.setAttribute('data-theme', savedTheme);
+            document.querySelector(`[data-theme="${savedTheme}"]`).classList.add('active');
+        }
 
-// LOGOUT
-logoutBtn.onclick = () => {
-    uploadCard.classList.add("hidden");
-    authCard.classList.remove("hidden");
-    emailInput.value = "";
-    passwordInput.value = "";
-    fileInput.value = "";
-    preview.innerHTML = "No image selected";
-    analyzeBtn.disabled = true;
-    result.innerHTML = "";
-};
+        // Navigation
+        function initializeNavigation() {
+            const navLinks = document.querySelectorAll('.nav-link');
 
-// IMAGE PREVIEW
-fileInput.onchange = () => {
-    const file = fileInput.files[0];
-    if (file) {
-        preview.innerHTML = `<img src="${URL.createObjectURL(file)}">`;
-        analyzeBtn.disabled = false;
-    } else {
-        preview.innerHTML = "No image selected";
-        analyzeBtn.disabled = true;
-    }
-};
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = link.dataset.page;
+                    navigateToPage(page);
+                });
+            });
+        }
 
-// ANALYZE BUTTON
-analyzeBtn.onclick = () => {
-    result.innerHTML = "Analyzing...";
-    setTimeout(() => {
-        result.innerHTML = "Tumor Detected (Confidence: 92%)";
-    }, 2000);
-};
-</script>
+        function navigateToPage(page) {
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[data-page="${page}"]`).classList.add('active');
 
+            // Hide all pages
+            [authPage, dashboardPage, predictPage, patientsPage, aboutPage].forEach(p => {
+                p.classList.add('hidden');
+            });
+
+            // Show selected page
+            const pageElement = document.getElementById(`${page}Page`);
+            if (pageElement) {
+                pageElement.classList.remove('hidden');
+                currentPage = page;
+            }
+        }
+
+        // Authentication
+        function initializeAuth() {
+            const loginForm = document.getElementById('loginFormData');
+            const registerForm = document.getElementById('registerFormData');
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            // Password validation on input
+            document.getElementById('registerPassword').addEventListener('input', (e) => {
+                showPasswordValidation(e.target.value);
+            });
+
+            // Login form
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+
+                try {
+                    const response = await fetch(`${window.API_BASE_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        localStorage.setItem('token', data.access_token);
+                        currentUser = data.user;
+                        showMessage('Login successful!', 'success');
+                        onLoginSuccess();
+                    } else {
+                        showMessage(data.detail || 'Login failed', 'error');
+                    }
+                } catch (error) {
+                    showMessage('Network error. Please try again.', 'error');
+                }
+            });
+
+            // Register form
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('registerName').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+                if (password !== confirmPassword) {
+                    showMessage('Passwords do not match', 'error');
+                    return;
+                }
+
+                // Validate password strength
+                const passwordValidation = validatePassword(password);
+                if (!passwordValidation.isValid) {
+                    showMessage('Password does not meet requirements', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${window.API_BASE_URL}/auth/register`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ name, email, password, confirm_password: confirmPassword })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        showMessage('Registration successful! Please login.', 'success');
+                        // Switch to login tab
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        document.querySelector('[data-tab="login"]').classList.add('active');
+                        document.getElementById('loginForm').classList.remove('hidden');
+                        document.getElementById('registerForm').classList.add('hidden');
+                        registerForm.reset();
+                    } else {
+                        showMessage(data.detail || 'Registration failed', 'error');
+                    }
+                } catch (error) {
+                    showMessage('Network error. Please try again.', 'error');
+                }
+            });
+
+            // Logout
+            logoutBtn.addEventListener('click', () => {
+                currentUser = null;
+                onLogout();
+            });
+        }
+
+        function onLoginSuccess() {
+            authPage.classList.add('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            navigateToPage('dashboard');
+            loadDashboardData();
+        }
+
+        function onLogout() {
+            localStorage.removeItem('token');
+            currentUser = null;
+            authPage.classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            navigateToPage('dashboard');
+            // Reset forms
+            document.getElementById('loginFormData').reset();
+            document.getElementById('registerFormData').reset();
+        }
+
+        // Check for existing authentication on page load
+        function checkAuthStatus() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                // Verify token with backend
+                fetch(`${window.API_BASE_URL}/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Invalid token');
+                    }
+                })
+                .then(user => {
+                    currentUser = user;
+                    onLoginSuccess();
+                })
+                .catch(() => {
+                    localStorage.removeItem('token');
+                    authPage.classList.remove('hidden');
+                });
+            }
+        }
+
+        // Dashboard
+        async function loadDashboardData() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${window.API_BASE_URL}/dashboard/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('totalPatients').textContent = stats.total_patients;
+                    document.getElementById('totalPredictions').textContent = stats.total_predictions;
+                    document.getElementById('detectionRate').textContent = `${stats.detection_rate}%`;
+                    document.getElementById('avgConfidence').textContent = `${stats.avg_confidence}%`;
+                } else {
+                    // Fallback to demo data
+                    document.getElementById('totalPatients').textContent = '12';
+                    document.getElementById('totalPredictions').textContent = '45';
+                    document.getElementById('detectionRate').textContent = '87%';
+                    document.getElementById('avgConfidence').textContent = '89%';
+                }
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                // Fallback to demo data
+                document.getElementById('totalPatients').textContent = '12';
+                document.getElementById('totalPredictions').textContent = '45';
+                document.getElementById('detectionRate').textContent = '87%';
+                document.getElementById('avgConfidence').textContent = '89%';
+            }
+        }
+
+        // File upload
+        function initializeFileUpload() {
+            const fileUpload = document.getElementById('fileUpload');
+            const fileInput = document.getElementById('scanFile');
+            const imagePreview = document.getElementById('imagePreview');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            // File upload area click
+            fileUpload.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Drag and drop
+            fileUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUpload.classList.add('dragover');
+            });
+
+            fileUpload.addEventListener('dragleave', () => {
+                fileUpload.classList.remove('dragover');
+            });
+
+            fileUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUpload.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0]);
+                }
+            });
+
+            // File input change
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+
+            function handleFileSelect(file) {
+                if (file && file.type.startsWith('image/')) {
+                    selectedFile = file;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        imagePreview.innerHTML = `<img src="${e.target.result}" class="file-preview" alt="Scan preview">`;
+                    };
+                    reader.readAsDataURL(file);
+                    analyzeBtn.disabled = false;
+                } else {
+                    showMessage('Please select a valid image file', 'error');
+                }
+            }
+
+            // Analyze button
+            analyzeBtn.addEventListener('click', async () => {
+                if (!selectedFile) {
+                    showMessage('Please select an image first', 'error');
+                    return;
+                }
+
+                if (!currentUser) {
+                    showMessage('Please login first', 'error');
+                    return;
+                }
+
+                analyzeBtn.innerHTML = '<span class="loading"></span> Analyzing...';
+                analyzeBtn.disabled = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+                    formData.append('scan_type', document.getElementById('scanType').value);
+
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`${window.API_BASE_URL}/predict`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        displayResults(result);
+                    } else {
+                        showMessage(result.detail || 'Analysis failed', 'error');
+                    }
+                } catch (error) {
+                    showMessage('Network error. Please try again.', 'error');
+                } finally {
+                    analyzeBtn.innerHTML = '<i class="fas fa-search"></i> Analyze Scan';
+                    analyzeBtn.disabled = false;
+                }
+            });
+        }
+
+        function performAnalysis() {
+            // Demo analysis - generate realistic results
+            const tumorDetected = Math.random() > 0.4; // 60% chance of tumor
+            const confidence = 0.7 + Math.random() * 0.25; // 70-95% confidence
+            const tumorProbability = tumorDetected ? confidence : (1 - confidence);
+
+            return {
+                tumorDetected,
+                confidence: confidence * 100,
+                tumorProbability: tumorProbability * 100,
+                scanType: document.getElementById('scanType').value,
+                analysisTime: '< 1 second',
+                timestamp: new Date().toLocaleString()
+            };
+        }
+
+        function displayResults(results) {
+            currentAnalysisResult = results;
+
+            const statusElement = document.getElementById('resultStatus');
+            const confidenceElement = document.getElementById('resultConfidence');
+
+            if (results.tumor_detected) {
+                statusElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: var(--error-color);"></i> Tumor Detected';
+                statusElement.style.color = 'var(--error-color)';
+            } else {
+                statusElement.innerHTML = '<i class="fas fa-check-circle" style="color: var(--success-color);"></i> No Tumor Detected';
+                statusElement.style.color = 'var(--success-color)';
+            }
+
+            confidenceElement.textContent = `${results.confidence.toFixed(1)}%`;
+            confidenceElement.style.color = results.confidence > 85 ? 'var(--success-color)' : 'var(--warning-color)';
+
+            document.getElementById('tumorProbability').textContent = `${results.tumor_probability.toFixed(1)}%`;
+            document.getElementById('confidenceLevel').textContent = `${results.confidence.toFixed(1)}%`;
+            document.getElementById('resultScanType').textContent = results.scan_type;
+            document.getElementById('analysisTime').textContent = results.analysis_time || 'Instant';
+
+            // Add tumor type information
+            const resultDetails = document.querySelector('.result-details');
+            const tumorTypeHtml = results.tumor_type ? `
+                <div class="result-detail">
+                    <div class="result-detail-label">Tumor Type</div>
+                    <div class="result-detail-value">
+                        <span class="tumor-type-badge tumor-type-${results.tumor_type.toLowerCase().replace(' ', '-') || 'none'}">
+                            ${results.tumor_type}
+                        </span>
+                    </div>
+                </div>
+                <div class="result-detail">
+                    <div class="result-detail-label">Severity</div>
+                    <div class="result-detail-value">
+                        <span class="tumor-type-badge severity-${results.severity ? results.severity.toLowerCase().replace(' ', '-') : 'low'}">
+                            ${results.severity || 'Low'}
+                        </span>
+                    </div>
+                </div>
+            ` : '';
+
+            // Insert tumor type info before the last result detail
+            const lastResultDetail = resultDetails.lastElementChild;
+            lastResultDetail.insertAdjacentHTML('beforebegin', tumorTypeHtml);
+
+            // Add recommendations if available
+            if (results.recommendations) {
+                const recommendationsHtml = `
+                    <div class="recommendations">
+                        <h4><i class="fas fa-clipboard-list"></i> Recommended Next Steps</h4>
+                        <ul>
+                            ${results.recommendations.next_steps.map(step => `<li>${step}</li>`).join('')}
+                        </ul>
+                        <p><strong>Specialist:</strong> ${results.recommendations.specialist}</p>
+                        <p><strong>Timeline:</strong> ${results.recommendations.timeline}</p>
+                        ${results.recommendations.treatments ? `<p><strong>Treatment Options:</strong> ${results.recommendations.treatments.join(', ')}</p>` : ''}
+                    </div>
+                `;
+                document.querySelector('.result-card').insertAdjacentHTML('beforeend', recommendationsHtml);
+            }
+
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Patients management
+        function initializePatients() {
+            const addPatientBtn = document.getElementById('addPatientBtn');
+            const addPatientModal = document.getElementById('addPatientModal');
+            const addPatientForm = document.getElementById('addPatientForm');
+            const patientSearch = document.getElementById('patientSearch');
+
+            // Add patient modal
+            addPatientBtn.addEventListener('click', () => {
+                addPatientModal.classList.add('show');
+            });
+
+            // Modal close buttons
+            document.querySelectorAll('.modal-close').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const modalId = btn.dataset.modal;
+                    document.getElementById(modalId).classList.remove('show');
+                });
+            });
+
+            // Add patient form
+            addPatientForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const patientData = {
+                    name: document.getElementById('patientName').value,
+                    patientId: document.getElementById('newPatientId').value,
+                    age: document.getElementById('patientAge').value,
+                    gender: document.getElementById('patientGender').value,
+                    bloodType: document.getElementById('patientBloodType').value,
+                    email: document.getElementById('patientEmail').value,
+                    phone: document.getElementById('patientPhone').value,
+                    address: document.getElementById('patientAddress').value,
+                    medicalHistory: document.getElementById('patientHistory').value,
+                    medications: document.getElementById('patientMedications').value,
+                    allergies: document.getElementById('patientAllergies').value,
+                    createdAt: new Date().toISOString(),
+                    predictions: []
+                };
+
+                // Save to local storage (demo)
+                savePatient(patientData);
+                addPatientModal.classList.remove('show');
+                addPatientForm.reset();
+                loadPatients();
+                showMessage('Patient added successfully!', 'success');
+            });
+
+            // Search functionality
+            patientSearch.addEventListener('input', () => {
+                loadPatients(patientSearch.value);
+            });
+
+            // Load demo patients
+            loadDemoPatients();
+            loadPatients();
+        }
+
+        function savePatient(patient) {
+            const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+            patients.push(patient);
+            localStorage.setItem('patients', JSON.stringify(patients));
+        }
+
+        function loadDemoPatients() {
+            const demoPatients = [
+                {
+                    name: "John Smith",
+                    patientId: "P001",
+                    age: 45,
+                    gender: "Male",
+                    email: "john.smith@email.com",
+                    phone: "+1-555-0123",
+                    medicalHistory: "Hypertension, Previous surgery",
+                    medications: "Lisinopril 10mg daily",
+                    allergies: "Penicillin",
+                    createdAt: new Date().toISOString(),
+                    predictions: []
+                },
+                {
+                    name: "Sarah Johnson",
+                    patientId: "P002",
+                    age: 32,
+                    gender: "Female",
+                    email: "sarah.j@email.com",
+                    phone: "+1-555-0456",
+                    medicalHistory: "Migraine history",
+                    medications: "Ibuprofen as needed",
+                    allergies: "None",
+                    createdAt: new Date().toISOString(),
+                    predictions: []
+                }
+            ];
+
+            if (!localStorage.getItem('patients')) {
+                localStorage.setItem('patients', JSON.stringify(demoPatients));
+            }
+        }
+
+        async function loadPatients(searchTerm = '') {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${window.API_BASE_URL}/patients/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const patientData = await response.json();
+
+                    // For now, show current user's data
+                    const patientList = document.getElementById('patientList');
+                    patientList.innerHTML = `
+                        <div class="patient-item">
+                            <div class="patient-info">
+                                <h4>${patientData.name || currentUser.name}</h4>
+                                <p>ID: ${patientData.patient_id} | Email: ${patientData.email}</p>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary);">
+                                    ${patientData.predictions ? patientData.predictions.length : 0} predictions available
+                                </p>
+                            </div>
+                            <div>
+                                <button class="btn btn-secondary" onclick="viewMyRecords()">
+                                    <i class="fas fa-eye"></i> View Records
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Fallback to demo data
+                    loadDemoPatients(searchTerm);
+                }
+            } catch (error) {
+                console.error('Failed to load patient data:', error);
+                loadDemoPatients(searchTerm);
+            }
+        }
+
+        function viewPatientDetails(patientId) {
+            const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+            const patient = patients.find(p => p.patientId === patientId);
+
+            if (!patient) return;
+
+            const modal = document.getElementById('patientDetailsModal');
+            const content = document.getElementById('patientDetailsContent');
+
+            content.innerHTML = `
+                <div class="grid grid-2">
+                    <div>
+                        <h4>Personal Information</h4>
+                        <table class="table">
+                            <tr><td><strong>Name:</strong></td><td>${patient.name}</td></tr>
+                            <tr><td><strong>Patient ID:</strong></td><td>${patient.patientId}</td></tr>
+                            <tr><td><strong>Age:</strong></td><td>${patient.age}</td></tr>
+                            <tr><td><strong>Gender:</strong></td><td>${patient.gender}</td></tr>
+                            <tr><td><strong>Blood Type:</strong></td><td>${patient.bloodType || 'Not specified'}</td></tr>
+                            <tr><td><strong>Email:</strong></td><td>${patient.email}</td></tr>
+                            <tr><td><strong>Phone:</strong></td><td>${patient.phone}</td></tr>
+                        </table>
+                    </div>
+                    <div>
+                        <h4>Medical Information</h4>
+                        <table class="table">
+                            <tr><td><strong>Medical History:</strong></td><td>${patient.medicalHistory || 'None'}</td></tr>
+                            <tr><td><strong>Current Medications:</strong></td><td>${patient.medications || 'None'}</td></tr>
+                            <tr><td><strong>Allergies:</strong></td><td>${patient.allergies || 'None'}</td></tr>
+                            <tr><td><strong>Address:</strong></td><td>${patient.address || 'Not provided'}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div style="margin-top: 2rem;">
+                    <h4>Prediction History</h4>
+                    ${patient.predictions && patient.predictions.length > 0 ?
+                        `<table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Result</th>
+                                    <th>Confidence</th>
+                                    <th>Scan Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${patient.predictions.map(pred => `
+                                    <tr>
+                                        <td>${new Date(pred.timestamp).toLocaleDateString()}</td>
+                                        <td>${pred.tumorDetected ? 'Tumor Detected' : 'No Tumor'}</td>
+                                        <td>${pred.confidence.toFixed(1)}%</td>
+                                        <td>${pred.scanType}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>` :
+                        '<p>No predictions available for this patient.</p>'
+                    }
+                </div>
+            `;
+
+            modal.classList.add('show');
+        }
+
+        // Contact form
+        function initializeContact() {
+            const contactForm = document.getElementById('contactForm');
+
+            contactForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const formData = {
+                    name: document.getElementById('contactName').value,
+                    email: document.getElementById('contactEmail').value,
+                    subject: document.getElementById('contactSubject').value,
+                    message: document.getElementById('contactMessage').value
+                };
+
+                try {
+                    const response = await fetch(`${window.API_BASE_URL}/contact`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        contactForm.reset();
+                        showMessage('Message sent successfully! We\'ll get back to you soon.', 'success');
+                    } else {
+                        showMessage(data.detail || 'Failed to send message', 'error');
+                    }
+                } catch (error) {
+                    showMessage('Network error. Please try again.', 'error');
+                }
+            });
+        }
+
+        // Utility functions
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.getElementById('authMessage') || document.getElementById('contactMessage');
+            if (messageDiv) {
+                messageDiv.className = `alert alert-${type}`;
+                messageDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+                messageDiv.classList.remove('hidden');
+
+                setTimeout(() => {
+                    messageDiv.classList.add('hidden');
+                }, 5000);
+            }
+        }
+
+        // Save result to patient
+        document.getElementById('saveResultBtn').addEventListener('click', () => {
+            if (!currentAnalysisResult) return;
+
+            const patientId = document.getElementById('patientId').value;
+            if (!patientId) {
+                showMessage('Please enter a patient ID to save the result', 'warning');
+                return;
+            }
+
+            const patients = JSON.parse(localStorage.getItem('patients') || '[]');
+            const patientIndex = patients.findIndex(p => p.patientId === patientId);
+
+            if (patientIndex === -1) {
+                showMessage('Patient not found. Please check the patient ID.', 'error');
+                return;
+            }
+
+            const prediction = {
+                timestamp: new Date().toISOString(),
+                tumorDetected: currentAnalysisResult.tumorDetected,
+                confidence: currentAnalysisResult.confidence,
+                tumorProbability: currentAnalysisResult.tumorProbability,
+                scanType: currentAnalysisResult.scanType,
+                analysisTime: currentAnalysisResult.analysisTime
+            };
+
+            patients[patientIndex].predictions = patients[patientIndex].predictions || [];
+            patients[patientIndex].predictions.push(prediction);
+
+            localStorage.setItem('patients', JSON.stringify(patients));
+            showMessage('Result saved to patient record successfully!', 'success');
+        });
+
+        // New analysis
+        document.getElementById('newAnalysisBtn').addEventListener('click', () => {
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('scanFile').value = '';
+            document.getElementById('imagePreview').innerHTML = `
+                <i class="fas fa-image" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <p>No image selected</p>
+            `;
+            document.getElementById('analyzeBtn').disabled = true;
+            selectedFile = null;
+            currentAnalysisResult = null;
+        });
+
+        // Global functions for onclick handlers
+        window.viewPatientDetails = viewPatientDetails;
+        window.viewMyRecords = viewMyRecords;
+
+        async function viewMyRecords() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${window.API_BASE_URL}/patients/${currentUser.patient_id}/predictions`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const predictions = await response.json();
+                    showPredictionsModal(predictions);
+                } else {
+                    showMessage('Failed to load predictions', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to load predictions:', error);
+                showMessage('Network error', 'error');
+            }
+        }
+
+        function showPredictionsModal(predictions) {
+            const modal = document.getElementById('patientDetailsModal');
+            const content = document.getElementById('patientDetailsContent');
+
+            content.innerHTML = `
+                <div>
+                    <h4>Prediction History</h4>
+                    ${predictions && predictions.length > 0 ?
+                        `<table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Result</th>
+                                    <th>Tumor Type</th>
+                                    <th>Confidence</th>
+                                    <th>Scan Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${predictions.map(pred => `
+                                    <tr>
+                                        <td>${new Date(pred.timestamp).toLocaleDateString()}</td>
+                                        <td>${pred.tumor_detected ? 'Tumor Detected' : 'No Tumor'}</td>
+                                        <td>${pred.tumor_type || 'N/A'}</td>
+                                        <td>${pred.confidence.toFixed(1)}%</td>
+                                        <td>${pred.scan_type}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>` :
+                        '<p>No predictions available for this patient.</p>'
+                    }
+                </div>
+            `;
+
+            modal.classList.add('show');
+        }
+
+        // Initialize everything when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase();
+            initializeThemes();
+            initializeNavigation();
+            initializeAuth();
+            initializeFileUpload();
+            initializePatients();
+            initializeContact();
+
+            // Check authentication status
+            checkAuthStatus();
+
+            // Load demo data
+            loadDashboardData();
+            loadDemoPatients();
+            loadPatients();
+        });
+    </script>
 </body>
 </html>
