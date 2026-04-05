@@ -41,6 +41,9 @@ heroku config:set PORT=8000
 
 ### 2. Deploy Backend
 
+> Note: For Heroku deployment, the root `requirements.txt` now contains the backend dependencies.
+> The Streamlit dependencies have been saved to `requirements-streamlit.txt` so the repository can still preserve the frontend dependency list.
+
 ```bash
 # Login to Heroku
 heroku login
