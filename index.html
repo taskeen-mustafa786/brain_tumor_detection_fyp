@@ -16,14 +16,20 @@
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // API Configuration - Auto-detect backend port
-        // Supports: localhost:3000 (development), localhost:8001 (alt), or production URL
+        // Supports: localhost:3000 (development), localhost:8001 (alt), production URL, or GitHub Pages
         window.API_BASE_URL = (() => {
             const host = window.location.hostname;
             const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+            const isGitHubPages = host.includes('github.io');
             
             if (isLocalhost) {
                 // Try common development ports
-                return 'http://localhost:3000';
+                return 'http://localhost:8001';
+            }
+            
+            if (isGitHubPages) {
+                // Production backend URL - UPDATE THIS when backend is deployed
+                return 'https://your-backend-app.herokuapp.com'; // Replace with your actual backend URL
             }
             
             // Production: use current host
@@ -1861,10 +1867,11 @@
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('active');
             });
-            document.querySelector(`[data-page="${page}"]`).classList.add('active');
+            document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
 
             // Hide all pages
-            [authPage, dashboardPage, predictPage, patientsPage, aboutPage].forEach(p => {
+            const pages = document.querySelectorAll('[id$="Page"]');
+            pages.forEach(p => {
                 p.classList.add('hidden');
             });
 
@@ -1873,6 +1880,11 @@
             if (pageElement) {
                 pageElement.classList.remove('hidden');
                 currentPage = page;
+                
+                // Load diagnosis history when navigating to dashboard
+                if (page === 'dashboard') {
+                    loadDiagnosisHistory();
+                }
             }
         }
 
