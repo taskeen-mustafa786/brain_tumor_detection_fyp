@@ -84,53 +84,53 @@
 
     <style>
         :root {
-            --primary-color: #2E86AB;
-            --secondary-color: #A23B72;
-            --accent-color: #F18F01;
+            --primary-color: #003D82;
+            --secondary-color: #0A1E28;
+            --accent-color: #4A90E2;
             --success-color: #4CAF50;
             --error-color: #f44336;
             --warning-color: #ff9800;
-            --info-color: #2196F3;
-            --dark-bg: #1a1a1a;
-            --light-bg: #f8f9fa;
-            --card-bg: #ffffff;
-            --text-primary: #333333;
-            --text-secondary: #666666;
-            --border-color: #e0e0e0;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+            --info-color: #4A90E2;
+            --dark-bg: #0F1419;
+            --light-bg: #1A2332;
+            --card-bg: #1E2936;
+            --text-primary: #E8EEF5;
+            --text-secondary: #9BA8B8;
+            --border-color: #2A3A4E;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
             --border-radius: 12px;
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         [data-theme="dark"] {
-            --primary-color: #4FC3F7;
-            --secondary-color: #BA68C8;
-            --accent-color: #FFB74D;
-            --dark-bg: #121212;
-            --light-bg: #1e1e1e;
-            --card-bg: #2d2d2d;
-            --text-primary: #ffffff;
-            --text-secondary: #b0b0b0;
-            --border-color: #404040;
+            --primary-color: #4A90E2;
+            --secondary-color: #003D82;
+            --accent-color: #6FA3FF;
+            --dark-bg: #0A0F15;
+            --light-bg: #151C28;
+            --card-bg: #1A2332;
+            --text-primary: #ECF0F8;
+            --text-secondary: #8E9BA8;
+            --border-color: #253548;
         }
 
         [data-theme="blue"] {
-            --primary-color: #1976D2;
-            --secondary-color: #7B1FA2;
-            --accent-color: #FF6F00;
+            --primary-color: #003D82;
+            --secondary-color: #0A1E28;
+            --accent-color: #4A90E2;
         }
 
         [data-theme="green"] {
-            --primary-color: #388E3C;
-            --secondary-color: #7B1FA2;
-            --accent-color: #F57C00;
+            --primary-color: #003D82;
+            --secondary-color: #0A1E28;
+            --accent-color: #4A90E2;
         }
 
         [data-theme="purple"] {
-            --primary-color: #7B1FA2;
-            --secondary-color: #C2185B;
-            --accent-color: #FFC107;
+            --primary-color: #003D82;
+            --secondary-color: #0A1E28;
+            --accent-color: #4A90E2;
         }
 
         * {
@@ -667,6 +667,79 @@
         @keyframes slideIn {
             from { transform: translateX(-100%); }
             to { transform: translateX(0); }
+        }
+
+        /* Scanning animation */
+        @keyframes scanningWave {
+            0% { transform: translateY(-100%); opacity: 1; }
+            100% { transform: translateY(100%); opacity: 0; }
+        }
+
+        @keyframes scanningPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.7); }
+            50% { box-shadow: 0 0 0 20px rgba(74, 144, 226, 0); }
+        }
+
+        @keyframes scanningGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+
+        .scanning-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 2rem auto;
+            border: 3px solid var(--accent-color);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(10, 30, 40, 0.3);
+        }
+
+        .scanning-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.7;
+        }
+
+        .scanning-wave {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                180deg,
+                transparent,
+                rgba(74, 144, 226, 0.4),
+                transparent
+            );
+            animation: scanningWave 2s infinite;
+        }
+
+        .scanning-status {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 20, 25, 0.9);
+            padding: 12px 24px;
+            border-radius: 20px;
+            color: var(--accent-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: scanningGlow 1.5s infinite;
+        }
+
+        .scanning-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            animation: scanningPulse 1.5s infinite;
         }
 
         /* Hidden class */
