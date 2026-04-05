@@ -20,18 +20,21 @@
         
         window.firebaseApp = null;
         window.firebaseConfig = null;
+        window.firebaseStatus = 'initializing'; // 'initializing', 'ready', 'error', 'not_configured'
 
         window.initializeFirebaseApp = async () => {
             try {
                 const response = await fetch(`${window.API_BASE_URL}/config`);
                 if (!response.ok) {
                     console.warn('Failed to fetch Firebase config:', response.statusText);
+                    window.firebaseStatus = 'error';
                     return;
                 }
 
                 const config = await response.json();
                 if (!config.firebase || !config.firebase.apiKey) {
                     console.warn('Firebase config is not configured in backend .env');
+                    window.firebaseStatus = 'not_configured';
                     return;
                 }
 
@@ -58,8 +61,10 @@
                     orderBy
                 };
                 window.firebaseConfig = config.firebase;
-                console.log('Firebase initialized from backend config');
+                window.firebaseStatus = 'ready';
+                console.log('✅ Firebase initialized from backend config');
             } catch (error) {
+                window.firebaseStatus = 'error';
                 console.warn('Firebase initialization failed:', error);
             }
         };
