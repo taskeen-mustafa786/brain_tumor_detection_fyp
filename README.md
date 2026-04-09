@@ -3,7 +3,7 @@
 > A comprehensive web-based application for automated brain tumor detection using state-of-the-art AI/ML technologies with cloud integration and HIPAA-compliant patient management.
 
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.31.1-red)](https://streamlit.io/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-green)](https://fastapi.tiangolo.com/)
 [![TensorFlow 2.14](https://img.shields.io/badge/TensorFlow-2.14-orange)](https://www.tensorflow.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-Firestore-yellow)](https://firebase.google.com/)
 [![License](https://img.shields.io/badge/License-FYP-green)](#license)
@@ -37,7 +37,7 @@
 ### ☁️ Cloud Integration
 - **Firestore Database** - HIPAA-compliant cloud storage
 - **Demo Mode** - Works without credentials (in-memory storage)
-- **Secure Authentication** - Ready for production deployment
+- **Secure Authentication** - JWT-based authentication
 - **Scalable Architecture** - Built for growth
 
 ### 📊 Analytics & Reports
@@ -88,34 +88,40 @@
 git clone <repository-url>
 cd brain_tumor_detection_fyp
 
-# Create virtual environment
+# Backend Setup
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
 
-# Run application
-streamlit run app.py
+# Frontend Setup (optional for development)
+npm install
+
+# Start Backend
+cd backend
+python main.py
 ```
 
-The app will open at `http://localhost:8501`
+The backend will run at `http://localhost:8001`
 
 ## 📖 Usage Guide
 
-### 1. Make a Prediction
+### 1. Access the Application
+- Open `index.html` in your web browser (backend must be running)
+- Backend runs on `http://localhost:8001`
+
+### 2. Make a Prediction
 ```
-📥 Upload MRI/CT scan → 👤 Select/Register patient → ⚙️ Set threshold → 🔮 Analyze → 💾 Save
+📥 Upload MRI/CT scan → 👤 Login/Register → ⚙️ Set parameters → 🔮 Analyze → 💾 Save results
 ```
 
-### 2. View Patient Records
+### 3. View Patient Records
 ```
-Search patient → View history → Add records → Export data
+Login → View dashboard → Access medical history → Review predictions
 ```
 
-### 3. Compare Models
+### 4. Model Information
 ```
-View metrics → Analyze performance → Compare F1/Precision/Recall → Export comparison
+Dashboard → Model Performance → View metrics and comparisons
 ```
 
 ## 📁 Project Structure
@@ -123,49 +129,32 @@ View metrics → Analyze performance → Compare F1/Precision/Recall → Export 
 ```
 brain_tumor_detection_fyp/
 ├── 📄 README.md                 ← You are here
-├── 📄 CLOUD_SETUP.md            ← Cloud deployment guide
-├── 🐍 app.py                    ← Main Streamlit app
-├── 📋 requirements.txt           ← Dependencies
-├── 📋 .env.example              ← Configuration template
-├── .streamlit/
-│   └── config.toml              ← Streamlit settings
+├── 🌐 index.html                ← Main frontend application
+├── 📋 requirements.txt          ← Backend dependencies
+├── 📁 backend/
+│   └── 🐍 main.py               ← FastAPI backend server
 ├── 📁 utils/
 │   ├── model_utils.py           ← Model & prediction logic
 │   ├── firestore_config.py      ← Cloud database wrapper
 │   └── patient_db.py            ← Patient management
-├── 📁 pages/
-│   ├── dashboard.py             ← Overview dashboard
-│   ├── predict.py               ← Prediction interface
-│   ├── patient_records.py       ← Patient management UI
-│   └── model_comparison.py      ← Results & comparison
 ├── 📁 TL-Model/
-│   ├── TL_btd_model.h5          ← Transfer learning model
-│   └── TL_btd_model.ipynb       ← Training notebook
+│   └── TL_btd_model.h5          ← Transfer learning model
 └── 📁 model_from_scratch/
-    ├── btd_model2.h5            ← Custom CNN model
-    └── Copy_of_Model_development_Training_Evolution.ipynb
+    └── btd_model2.h5            ← Custom CNN model
 ```
 
 ## 💻 Technology Stack
 
 | Component | Technology | Version |
 |-----------|-----------|---------|
-| **Framework** | Streamlit | 1.31.1 |
+| **Frontend** | HTML/CSS/JavaScript | - |
+| **Backend** | FastAPI | 0.104.1 |
 | **ML/DL** | TensorFlow/Keras | 2.14.0 |
 | **Database** | Firebase Firestore | - |
-| **Visualization** | Plotly | 5.18.0 |
+| **Authentication** | JWT + Firebase Auth | - |
 | **Python** | Python | 3.8+ |
-| **Cloud** | Google Cloud | - |
 
-## 📚 Documentation
-
-- [Installation Guide](CLOUD_SETUP.md#-installation)
-- [Configuration Guide](CLOUD_SETUP.md#-configuration)
-- [Usage Guide](CLOUD_SETUP.md#-usage-guide)
-- [Deployment Guide](CLOUD_SETUP.md#-deployment)
-- [Security Guide](CLOUD_SETUP.md#-security--privacy)
-
-## 🔐 Security & Compliance
+##  Security & Compliance
 
 ✅ HIPAA-ready architecture
 ✅ Data encryption support
@@ -195,7 +184,7 @@ This project is part of a Final Year Project (FYP). See LICENSE file for details
 
 - **EfficientNetB0** - ImageNet pretrained weights
 - **TensorFlow** - Deep learning framework
-- **Streamlit** - Web framework
+- **FastAPI** - Modern Python web framework
 - **Firebase** - Cloud infrastructure
 
 ---
