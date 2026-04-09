@@ -1,8 +1,0 @@
-# System dependencies for Streamlit Cloud deployment
-# Required for TensorFlow and OpenCV
-libglib2.0-0
-libsm6
-libxext6
-libxrender-dev
-libgomp1
-libgthread-2.0-0
