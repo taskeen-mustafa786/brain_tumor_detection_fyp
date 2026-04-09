@@ -18,22 +18,21 @@
         // API Configuration - Auto-detect backend port
         // Supports: localhost:3000 (development), localhost:8001 (alt), production URL, or GitHub Pages
         window.API_BASE_URL = (() => {
-            const host = window.location.hostname;
-            const isLocalhost = host === 'localhost' || host === '127.0.0.1';
-            const isGitHubPages = host.includes('github.io');
+            const host = window.location.host;
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
             
-            if (isLocalhost) {
-                // Try common development ports
-                return 'http://localhost:8001';
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return `${protocol}//localhost:3000`;
             }
             
-            if (isGitHubPages) {
-                // Production backend URL - UPDATE THIS when backend is deployed
-                return 'https://your-backend-app.herokuapp.com'; // Replace with your actual backend URL
+            // GitHub Codespaces format: {name}-{port}.app.github.dev
+            if (host.includes('app.github.dev')) {
+                return `${protocol}//${host.replace(/-\d+\./, '-3000.')}`;
             }
             
-            // Production: use current host
-            return `${window.location.protocol}//${host}:${window.location.port || window.location.protocol === 'https:' ? 443 : 80}`;
+            // Fallback
+            return `${protocol}//${hostname}:3000`;
         })();
         
         window.firebaseApp = null;

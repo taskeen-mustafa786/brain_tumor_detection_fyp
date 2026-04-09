@@ -31,20 +31,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware
+# CORS middleware configuration
 BACKEND_HOST = os.getenv("HOST", "0.0.0.0")
-BACKEND_PORT = int(os.getenv("PORT", 8001))
-ALLOWED_ORIGINS = os.getenv(
-    "ALLOW_ORIGINS",
-    "http://localhost:8000,http://localhost:8080,http://localhost:3000,http://localhost:8501"
-).split(",")
+BACKEND_PORT = int(os.getenv("PORT", 3000))
 
+# Configure CORS for development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=".*",  # Allow all origins in development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    max_age=3600,
+    expose_headers=["*"]
 )
 
 # Security
@@ -129,7 +128,7 @@ def init_services():
         print("✅ JWT_SECRET configured from environment")
 
     # Initialize model
-    model_path = os.getenv("MODEL_PATH", "TL-Model/TL_btd_model.h5")
+    model_path = os.getenv("MODEL_PATH", "../TL-Model/TL_btd_model.h5")
     if os.path.exists(model_path):
         model = ModelUtils.load_model(model_path)
     else:
